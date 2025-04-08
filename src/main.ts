@@ -14,6 +14,22 @@ interface Airline {
   code: string;
 }
 
+interface FlightDetails {
+  departureDate: string;
+  arrivalDate: string;
+  departureTimeInput: string;
+  arrivalTimeInput: string;
+  departureFormattedDate: string;
+  arrivalFormattedDate: string;
+  departureTime: string;
+  arrivalTime: string;
+  layovers: number;
+  multipleAirlines: boolean;
+  selectedAirlines: string[];
+  source: string;
+  destination: string;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -31,90 +47,201 @@ interface Airline {
 
         <div class="form-section">
           <h2>Flight Details</h2>
-          
-          <div class="form-group">
-            <label>Source Airport:</label>
-            <select [(ngModel)]="selectedSource" class="modern-select">
-              <option value="" disabled selected>Select source airport</option>
-              <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
-                {{airport.name}} ({{airport.code}})
-              </option>
-            </select>
-          </div>
 
           <div class="form-group">
-            <label>Destination Airport:</label>
-            <select [(ngModel)]="selectedDestination" class="modern-select">
-              <option value="" disabled selected>Select destination airport</option>
-              <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
-                {{airport.name}} ({{airport.code}})
-              </option>
-            </select>
-          </div>
-
-          <div class="date-time-group">
-            <div class="form-group">
-              <label>Departure Date:</label>
-              <input type="date" [(ngModel)]="departureDate" (change)="updateDateFormat('departure')">
-            </div>
-
-            <div class="form-group">
-              <label>Departure Time:</label>
-              <input type="time" [(ngModel)]="departureTimeInput" (change)="updateTimeFormat('departure')">
-            </div>
-          </div>
-
-          <div class="date-time-group">
-            <div class="form-group">
-              <label>Arrival Date:</label>
-              <input type="date" [(ngModel)]="arrivalDate" (change)="updateDateFormat('arrival')">
-            </div>
-
-            <div class="form-group">
-              <label>Arrival Time:</label>
-              <input type="time" [(ngModel)]="arrivalTimeInput" (change)="updateTimeFormat('arrival')">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Number of Layovers:</label>
-            <input type="number" [(ngModel)]="layovers" min="0" max="3" class="modern-input" (change)="handleLayoverChange()">
-          </div>
-
-          <div class="form-group" *ngIf="layovers > 0">
-            <label>Multiple Airlines?</label>
+            <label>Trip Type:</label>
             <div class="toggle-group">
               <button 
-                [class]="'toggle-btn ' + (multipleAirlines ? 'active' : '')"
-                (click)="toggleMultipleAirlines(true)">
-                Yes
+                [class]="'toggle-btn ' + (!isRoundTrip ? 'active' : '')"
+                (click)="setTripType(false)">
+                One Way
               </button>
               <button 
-                [class]="'toggle-btn ' + (!multipleAirlines ? 'active' : '')"
-                (click)="toggleMultipleAirlines(false)">
-                No
+                [class]="'toggle-btn ' + (isRoundTrip ? 'active' : '')"
+                (click)="setTripType(true)">
+                Round Trip
               </button>
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Airline{{ multipleAirlines ? 's' : '' }}:</label>
-            <div *ngIf="!multipleAirlines">
-              <select [(ngModel)]="selectedAirlines[0]" class="modern-select">
-                <option value="" disabled selected>Select airline</option>
-                <option *ngFor="let airline of airlines" [value]="airline.code">
-                  {{airline.name}}
+          <div class="flight-section">
+            <h3>Outbound Flight</h3>
+            
+            <div class="form-group">
+              <label>Source Airport:</label>
+              <select [(ngModel)]="outboundFlight.source" class="modern-select">
+                <option value="" disabled selected>Select source airport</option>
+                <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
+                  {{airport.name}} ({{airport.code}})
                 </option>
               </select>
             </div>
-            <div *ngIf="multipleAirlines">
-              <div *ngFor="let i of getLayoverArray(); let idx = index" class="multi-airline-select">
-                <select [(ngModel)]="selectedAirlines[idx]" class="modern-select">
-                  <option value="" disabled selected>Select airline {{idx + 1}}</option>
+
+            <div class="form-group">
+              <label>Destination Airport:</label>
+              <select [(ngModel)]="outboundFlight.destination" class="modern-select">
+                <option value="" disabled selected>Select destination airport</option>
+                <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
+                  {{airport.name}} ({{airport.code}})
+                </option>
+              </select>
+            </div>
+          
+            <div class="date-time-group">
+              <div class="form-group">
+                <label>Departure Date:</label>
+                <input type="date" [(ngModel)]="outboundFlight.departureDate" (change)="updateDateFormat('departure', 'outbound')">
+              </div>
+
+              <div class="form-group">
+                <label>Departure Time:</label>
+                <input type="time" [(ngModel)]="outboundFlight.departureTimeInput" (change)="updateTimeFormat('departure', 'outbound')">
+              </div>
+            </div>
+
+            <div class="date-time-group">
+              <div class="form-group">
+                <label>Arrival Date:</label>
+                <input type="date" [(ngModel)]="outboundFlight.arrivalDate" (change)="updateDateFormat('arrival', 'outbound')">
+              </div>
+
+              <div class="form-group">
+                <label>Arrival Time:</label>
+                <input type="time" [(ngModel)]="outboundFlight.arrivalTimeInput" (change)="updateTimeFormat('arrival', 'outbound')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Layovers:</label>
+              <input type="number" [(ngModel)]="outboundFlight.layovers" min="0" max="3" class="modern-input" (change)="handleLayoverChange('outbound')">
+            </div>
+
+            <div class="form-group" *ngIf="outboundFlight.layovers > 0">
+              <label>Multiple Airlines?</label>
+              <div class="toggle-group">
+                <button 
+                  [class]="'toggle-btn ' + (outboundFlight.multipleAirlines ? 'active' : '')"
+                  (click)="toggleMultipleAirlines(true, 'outbound')">
+                  Yes
+                </button>
+                <button 
+                  [class]="'toggle-btn ' + (!outboundFlight.multipleAirlines ? 'active' : '')"
+                  (click)="toggleMultipleAirlines(false, 'outbound')">
+                  No
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Airline{{ outboundFlight.multipleAirlines ? 's' : '' }}:</label>
+              <div *ngIf="!outboundFlight.multipleAirlines">
+                <select [(ngModel)]="outboundFlight.selectedAirlines[0]" class="modern-select">
+                  <option value="" disabled selected>Select airline</option>
                   <option *ngFor="let airline of airlines" [value]="airline.code">
                     {{airline.name}}
                   </option>
                 </select>
+              </div>
+              <div *ngIf="outboundFlight.multipleAirlines">
+                <div *ngFor="let i of getLayoverArray('outbound'); let idx = index" class="multi-airline-select">
+                  <select [(ngModel)]="outboundFlight.selectedAirlines[idx]" class="modern-select">
+                    <option value="" disabled selected>Select airline {{idx + 1}}</option>
+                    <option *ngFor="let airline of airlines" [value]="airline.code">
+                      {{airline.name}}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flight-section" *ngIf="isRoundTrip">
+            <h3>Return Flight</h3>
+            
+            <div class="form-group">
+              <label>Source Airport:</label>
+              <select [(ngModel)]="inboundFlight.source" class="modern-select">
+                <option value="" disabled selected>Select source airport</option>
+                <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
+                  {{airport.name}} ({{airport.code}})
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Destination Airport:</label>
+              <select [(ngModel)]="inboundFlight.destination" class="modern-select">
+                <option value="" disabled selected>Select destination airport</option>
+                <option *ngFor="let airport of airports" [value]="airport.skyscannerCode">
+                  {{airport.name}} ({{airport.code}})
+                </option>
+              </select>
+            </div>
+
+            <div class="date-time-group">
+              <div class="form-group">
+                <label>Departure Date:</label>
+                <input type="date" [(ngModel)]="inboundFlight.departureDate" (change)="updateDateFormat('departure', 'inbound')">
+              </div>
+
+              <div class="form-group">
+                <label>Departure Time:</label>
+                <input type="time" [(ngModel)]="inboundFlight.departureTimeInput" (change)="updateTimeFormat('departure', 'inbound')">
+              </div>
+            </div>
+
+            <div class="date-time-group">
+              <div class="form-group">
+                <label>Arrival Date:</label>
+                <input type="date" [(ngModel)]="inboundFlight.arrivalDate" (change)="updateDateFormat('arrival', 'inbound')">
+              </div>
+
+              <div class="form-group">
+                <label>Arrival Time:</label>
+                <input type="time" [(ngModel)]="inboundFlight.arrivalTimeInput" (change)="updateTimeFormat('arrival', 'inbound')">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Layovers:</label>
+              <input type="number" [(ngModel)]="inboundFlight.layovers" min="0" max="3" class="modern-input" (change)="handleLayoverChange('inbound')">
+            </div>
+
+            <div class="form-group" *ngIf="inboundFlight.layovers > 0">
+              <label>Multiple Airlines?</label>
+              <div class="toggle-group">
+                <button 
+                  [class]="'toggle-btn ' + (inboundFlight.multipleAirlines ? 'active' : '')"
+                  (click)="toggleMultipleAirlines(true, 'inbound')">
+                  Yes
+                </button>
+                <button 
+                  [class]="'toggle-btn ' + (!inboundFlight.multipleAirlines ? 'active' : '')"
+                  (click)="toggleMultipleAirlines(false, 'inbound')">
+                  No
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Airline{{ inboundFlight.multipleAirlines ? 's' : '' }}:</label>
+              <div *ngIf="!inboundFlight.multipleAirlines">
+                <select [(ngModel)]="inboundFlight.selectedAirlines[0]" class="modern-select">
+                  <option value="" disabled selected>Select airline</option>
+                  <option *ngFor="let airline of airlines" [value]="airline.code">
+                    {{airline.name}}
+                  </option>
+                </select>
+              </div>
+              <div *ngIf="inboundFlight.multipleAirlines">
+                <div *ngFor="let i of getLayoverArray('inbound'); let idx = index" class="multi-airline-select">
+                  <select [(ngModel)]="inboundFlight.selectedAirlines[idx]" class="modern-select">
+                    <option value="" disabled selected>Select airline {{idx + 1}}</option>
+                    <option *ngFor="let airline of airlines" [value]="airline.code">
+                      {{airline.name}}
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -163,6 +290,13 @@ interface Airline {
       margin: 1.5rem 0;
       font-size: 1.5rem;
     }
+    h3 {
+      color: #2c3e50;
+      margin: 1.5rem 0 1rem;
+      font-size: 1.25rem;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+    }
     .steps {
       background: #f8fafc;
       border-radius: 8px;
@@ -191,6 +325,12 @@ interface Airline {
       background: #ffffff;
       border-radius: 8px;
       padding: 1rem 0;
+    }
+    .flight-section {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
     }
     .form-group {
       margin-bottom: 1.5rem;
@@ -246,6 +386,7 @@ interface Airline {
     .result h3 {
       margin: 0 0 1rem;
       color: #2c3e50;
+      border-bottom: none;
     }
     .link {
       color: #3b82f6;
@@ -308,89 +449,131 @@ export class App {
     { name: 'Ethiad', code: '32339' },
     { name: 'Lufthansa', code: '32090' },
     { name: 'Air France', code: '32677' },
-    { name: 'Hong Kong Airlines', code: '32229' }
+    { name: 'Hong Kong Airlines', code: '32229' },
+    { name: 'Cathay Pacific', code: '32456'},
+    { name: 'All Nippon Airways (ANA)', code: '32571'}
   ];
 
-  selectedSource = '';
-  selectedDestination = '';
-  departureDate = '';
-  arrivalDate = '';
-  departureTimeInput = '';
-  arrivalTimeInput = '';
-  departureFormattedDate = '';
-  arrivalFormattedDate = '';
-  departureTime = '';
-  arrivalTime = '';
-  layovers = 0;
-  multipleAirlines = false;
-  selectedAirlines: string[] = [''];
+  isRoundTrip = false;
   cabinClass = 'economy';
   generatedLink = '';
 
-  handleLayoverChange() {
-    if (this.layovers > 0) {
-      this.selectedAirlines = Array(this.layovers + 1).fill('');
+  outboundFlight: FlightDetails = {
+    departureDate: '',
+    arrivalDate: '',
+    departureTimeInput: '',
+    arrivalTimeInput: '',
+    departureFormattedDate: '',
+    arrivalFormattedDate: '',
+    departureTime: '',
+    arrivalTime: '',
+    layovers: 0,
+    multipleAirlines: false,
+    selectedAirlines: [''],
+    source: '',
+    destination: ''
+  };
+
+  inboundFlight: FlightDetails = {
+    departureDate: '',
+    arrivalDate: '',
+    departureTimeInput: '',
+    arrivalTimeInput: '',
+    departureFormattedDate: '',
+    arrivalFormattedDate: '',
+    departureTime: '',
+    arrivalTime: '',
+    layovers: 0,
+    multipleAirlines: false,
+    selectedAirlines: [''],
+    source: '',
+    destination: ''
+  };
+
+  setTripType(isRound: boolean) {
+    this.isRoundTrip = isRound;
+  }
+
+  handleLayoverChange(type: 'outbound' | 'inbound') {
+    const flight = type === 'outbound' ? this.outboundFlight : this.inboundFlight;
+    if (flight.layovers > 0) {
+      flight.selectedAirlines = Array(flight.layovers + 1).fill('');
     } else {
-      this.selectedAirlines = [''];
-      this.multipleAirlines = false;
+      flight.selectedAirlines = [''];
+      flight.multipleAirlines = false;
     }
   }
 
-  toggleMultipleAirlines(value: boolean) {
-    this.multipleAirlines = value;
+  toggleMultipleAirlines(value: boolean, type: 'outbound' | 'inbound') {
+    const flight = type === 'outbound' ? this.outboundFlight : this.inboundFlight;
+    flight.multipleAirlines = value;
     if (value) {
-      this.selectedAirlines = Array(this.layovers + 1).fill('');
+      flight.selectedAirlines = Array(flight.layovers + 1).fill('');
     } else {
-      this.selectedAirlines = [''];
+      flight.selectedAirlines = [''];
     }
   }
 
-  getLayoverArray() {
-    return Array(this.layovers + 1).fill(0);
+  getLayoverArray(type: 'outbound' | 'inbound') {
+    const flight = type === 'outbound' ? this.outboundFlight : this.inboundFlight;
+    return Array(flight.layovers + 1).fill(0);
   }
 
-  updateDateFormat(type: 'departure' | 'arrival') {
-    const dateObj = type === 'departure' ? new Date(this.departureDate) : new Date(this.arrivalDate);
+  updateDateFormat(type: 'departure' | 'arrival', direction: 'outbound' | 'inbound') {
+    const flight = direction === 'outbound' ? this.outboundFlight : this.inboundFlight;
+    const dateStr = type === 'departure' ? flight.departureDate : flight.arrivalDate;
+    const dateObj = new Date(dateStr);
     const year = dateObj.getFullYear().toString().slice(-2);
     const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
     const day = dateObj.getDate().toString().padStart(2, '0');
     const formattedDate = `${year}${month}${day}`;
     
     if (type === 'departure') {
-      this.departureFormattedDate = formattedDate;
+      flight.departureFormattedDate = formattedDate;
     } else {
-      this.arrivalFormattedDate = formattedDate;
+      flight.arrivalFormattedDate = formattedDate;
     }
   }
 
-  updateTimeFormat(type: 'departure' | 'arrival') {
-    const timeStr = type === 'departure' ? this.departureTimeInput : this.arrivalTimeInput;
+  updateTimeFormat(type: 'departure' | 'arrival', direction: 'outbound' | 'inbound') {
+    const flight = direction === 'outbound' ? this.outboundFlight : this.inboundFlight;
+    const timeStr = type === 'departure' ? flight.departureTimeInput : flight.arrivalTimeInput;
     const [hours, minutes] = timeStr.split(':');
     if (type === 'departure') {
-      this.departureTime = `${hours}${minutes}`;
+      flight.departureTime = `${hours}${minutes}`;
     } else {
-      this.arrivalTime = `${hours}${minutes}`;
+      flight.arrivalTime = `${hours}${minutes}`;
     }
+  }
+
+  generateFlightConfig(flight: FlightDetails): string {
+    let airlineConfig: string;
+    if (flight.multipleAirlines) {
+      const uniqueAirlines = [...new Set(flight.selectedAirlines)];
+      airlineConfig = uniqueAirlines.map(code => `-${code}`).join(',');
+    } else {
+      airlineConfig = `-${flight.selectedAirlines[0]}`;
+    }
+
+    return `${flight.source}-${flight.departureFormattedDate}${flight.departureTime}-${airlineConfig}-${flight.layovers}-${flight.destination}-${flight.arrivalFormattedDate}${flight.arrivalTime}`;
   }
 
   generateLink() {
-  const baseUrl = 'https://www.skyscanner.co.in/transport/flights';
-  const sourceAirport = this.airports.find(a => a.skyscannerCode === this.selectedSource)?.code.toLowerCase();
-  const destAirport = this.airports.find(a => a.skyscannerCode === this.selectedDestination)?.code.toLowerCase();
+    const baseUrl = 'https://www.skyscanner.co.in/transport/flights';
+    const sourceAirport = this.airports.find(a => a.skyscannerCode === this.outboundFlight.source)?.code.toLowerCase();
+    const destAirport = this.airports.find(a => a.skyscannerCode === this.outboundFlight.destination)?.code.toLowerCase();
 
-  let airlineConfig: string;
-  if (this.multipleAirlines) {
-    const uniqueAirlines = [...new Set(this.selectedAirlines)];
-    // Prefix each code with a hyphen, then join with commas
-    airlineConfig = uniqueAirlines.map(code => `-${code}`).join(',');
-  } else {
-    airlineConfig = `-${this.selectedAirlines[0]}`;
+    const outboundConfig = this.generateFlightConfig(this.outboundFlight);
+
+    let configPart = outboundConfig;
+
+    if (this.isRoundTrip) {
+      const inboundConfig = this.generateFlightConfig(this.inboundFlight);
+      configPart = `${outboundConfig}%7C${inboundConfig}`;
+    }
+
+    this.generatedLink = `${baseUrl}/${sourceAirport}/${destAirport}/${this.outboundFlight.departureFormattedDate}/${this.inboundFlight.departureFormattedDate}/config/${configPart}?adults=1&cabinclass=${this.cabinClass}&children=0&infants=0&preferdirects=false&rtn=${this.isRoundTrip ? 1 : 0}`;
   }
-
-  const configPart = `${this.selectedSource}-${this.departureFormattedDate}${this.departureTime}-${airlineConfig}-${this.layovers}-${this.selectedDestination}-${this.arrivalFormattedDate}${this.arrivalTime}`;
-
-  this.generatedLink = `${baseUrl}/${sourceAirport}/${destAirport}/${this.departureFormattedDate}/config/${configPart}?adults=1&cabinclass=${this.cabinClass}&children=0&infants=0&preferdirects=${this.layovers === 0}&rtn=0`;
 }
 
-}
 bootstrapApplication(App);
